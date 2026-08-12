@@ -9,7 +9,6 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Initialize Gemini AI Client lazy/server-side
   const getAi = () => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -25,12 +24,10 @@ async function startServer() {
     });
   };
 
-  // API Routes
   app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", message: "Human Body Fundamentals API is running" });
+    res.json({ status: "ok", message: "BodyPractice.io API is running" });
   });
 
-  // AI Anatomy Tutor Endpoint
   app.post("/api/tutor/chat", async (req, res) => {
     try {
       const { prompt, organContext, depthLevel, chatHistory } = req.body;
@@ -41,19 +38,29 @@ async function startServer() {
 
       const ai = getAi();
       const depthPrompts: Record<string, string> = {
-        elementary: "Explain like I'm 10 years old. Use fun analogies, simple terms, and engaging enthusiasm.",
-        middle: "Explain for a Middle School biology student. Balance clear terminology with intuitive real-world analogies.",
-        highschool: "Explain for a High School AP Biology student. Include technical terms, cellular/physiological mechanisms, and structural functions.",
-        college: "Explain with college-level biological precision, referencing biochemistry, tissue layers, and neurological/physiological pathways."
+        elementary: "Explain like I'm 10 years old. Use fun analogies and simple terms without sacrificing factual accuracy.",
+        middle: "Explain for a middle-school biology student. Balance clear terminology with intuitive real-world analogies.",
+        highschool: "Explain for a high-school biology student. Include appropriate technical terms and physiological mechanisms.",
+        college: "Explain with college-level biological precision, including relevant tissue, biochemical, neurological, or physiological mechanisms."
       };
 
-      const systemInstruction = `You are BioBot, a friendly, passionate, and highly knowledgeable Human Anatomy and Physiology Tutor for students. 
+      const systemInstruction = `You are BioBot, the educational anatomy and physiology tutor for BodyPractice.io.
 ${depthPrompts[depthLevel || "middle"] || depthPrompts["middle"]}
-Current Organ/Topic Context: ${organContext || "General Human Body Fundamentals"}.
-Formatting Guidelines:
-- Use clear bullet points and bold terms for readability.
-- When introducing a anatomical term, provide a quick pronunciation guide in parentheses if tricky (e.g. Occipital [ok-SIP-i-tul]).
-- End responses with an interesting "Did You Know?" fun fact or a short thought-provoking question to encourage curiosity.`;
+Current Organ/Topic Context: ${organContext || "General Human Anatomy and Physiology"}.
+
+Accuracy rules:
+- Prioritize established human anatomy and physiology over entertaining trivia.
+- Do not invent statistics, prevalence figures, records, exact speeds, exact forces, or "fun facts".
+- Avoid absolute claims such as "the only," "always," or "never" unless they are genuinely established and relevant exceptions have been considered.
+- Distinguish simplified teaching models from literal anatomy or physiology.
+- If evidence is uncertain, variable, debated, age-dependent, or measurement-dependent, say so explicitly rather than guessing.
+- Correct a false premise in the student's question before answering it.
+- Do not present educational information as a diagnosis or personalized medical advice.
+
+Formatting guidelines:
+- Use clear bullets and bold terms when helpful.
+- When introducing a difficult anatomical term, provide a brief pronunciation guide.
+- A "Did You Know?" item is optional and should be included only when it is a well-established fact; otherwise end with a useful review question.`;
 
       const contents = [];
       if (chatHistory && Array.isArray(chatHistory)) {
@@ -68,7 +75,7 @@ Formatting Guidelines:
         contents: contents.join("\n"),
         config: {
           systemInstruction,
-          temperature: 0.7,
+          temperature: 0.4,
         },
       });
 
@@ -79,7 +86,6 @@ Formatting Guidelines:
     }
   });
 
-  // Generate Custom Quiz Endpoint
   app.post("/api/quiz/generate", async (req, res) => {
     try {
       const { topic, difficulty } = req.body;
@@ -89,7 +95,8 @@ Formatting Guidelines:
         model: "gemini-3.6-flash",
         contents: `Generate a 5-question multiple choice quiz for students on the topic: "${topic || "Human Eye and Vision"}". Difficulty level: ${difficulty || "Medium"}.`,
         config: {
-          systemInstruction: "You are an anatomy exam writer. Produce clear, educational questions that test understanding of structure, function, and physiological processes.",
+          systemInstruction: `You are an anatomy and physiology exam writer for BodyPractice.io.
+Use established human anatomy and physiology only. Do not invent statistics, records, exact force/speed claims, or trivia. Avoid ambiguous questions and absolutes unless scientifically justified. If a topic has normal biological variation, phrase the question so that variation does not make more than one answer defensible. Explanations must be factually consistent with the marked answer.`,
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -128,7 +135,6 @@ Formatting Guidelines:
     }
   });
 
-  // Generate Fun Analogy Endpoint
   app.post("/api/explain/analogy", async (req, res) => {
     try {
       const { structureName, functionDescription } = req.body;
@@ -136,9 +142,9 @@ Formatting Guidelines:
 
       const response = await ai.models.generateContent({
         model: "gemini-3.6-flash",
-        contents: `Provide 3 creative real-world analogies (e.g., comparing to everyday objects, technology, or buildings) to help students instantly understand the anatomical structure: "${structureName}" (Function: ${functionDescription}).`,
+        contents: `Provide 3 creative real-world analogies to help a student understand the anatomical structure: "${structureName}" (Function: ${functionDescription}).`,
         config: {
-          systemInstruction: "Create vivid, relatable analogies that build memorable visual mental models for biology students.",
+          systemInstruction: `Create memorable teaching analogies for human anatomy and physiology. Each analogy must be clearly presented as an analogy, not literal anatomy. Preserve the supplied biological function accurately, do not add invented measurements or medical claims, and briefly state where the analogy stops being exact.`,
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -169,7 +175,6 @@ Formatting Guidelines:
     }
   });
 
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -185,7 +190,7 @@ Formatting Guidelines:
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Human Body Fundamentals server running on http://localhost:${PORT}`);
+    console.log(`BodyPractice.io server running on http://localhost:${PORT}`);
   });
 }
 
