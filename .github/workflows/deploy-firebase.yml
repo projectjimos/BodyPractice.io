@@ -48,6 +48,10 @@ jobs:
         run: |
           npx --yes tsx@latest -e "import('./src/data/auditedOrganData.ts').then(() => console.log('PASS: audited anatomy data loads without runtime errors.'))"
 
+      - name: Validate 700-question banks
+        run: |
+          npx --yes tsx@latest -e "import('./src/data/quizBanks.ts').then(({ QUIZ_BANKS }) => { const entries = Object.entries(QUIZ_BANKS); if (entries.length !== 7) throw new Error('Expected 7 body-system quiz banks.'); for (const [system, questions] of entries) { if (questions.length !== 100) throw new Error(system + ' has ' + questions.length + ' questions instead of 100.'); const ids = new Set(questions.map((q) => q.id)); if (ids.size !== 100) throw new Error(system + ' contains duplicate question IDs.'); for (const q of questions) { if (q.options.length !== 4) throw new Error(q.id + ' does not have 4 options.'); if (q.correctAnswerIndex < 0 || q.correctAnswerIndex > 3) throw new Error(q.id + ' has an invalid answer index.'); } console.log('PASS: ' + system + ' has 100 valid questions.'); } console.log('PASS: 700 total questions validated.'); })"
+
       - name: Build web app
         run: npm run build
 
@@ -74,28 +78,11 @@ jobs:
         run: |
           set -euo pipefail
           BASE_URL="https://${FIREBASE_PROJECT_ID}.web.app"
-
-          echo "Testing deployed homepage..."
           curl --fail --silent --show-error --location --retry 4 --retry-delay 2 \
             "$BASE_URL/" -o /tmp/home.html
           grep -q '<div id="root"></div>' /tmp/home.html
           grep -q '<title>BodyPractice.io</title>' /tmp/home.html
           echo "PASS: Firebase homepage is reachable and branded BodyPractice.io."
-
-          echo "Testing production API health route..."
-          API_STATUS=$(curl --silent --show-error --location \
-            -o /tmp/api-health.out -w '%{http_code}' "$BASE_URL/api/health" || true)
-          API_TYPE=$(curl --silent --show-error --head --location \
-            "$BASE_URL/api/health" | tr -d '\r' | awk 'BEGIN{IGNORECASE=1} /^content-type:/{print $2; exit}')
-
-          echo "API /api/health status: $API_STATUS"
-          echo "API /api/health content-type: ${API_TYPE:-unknown}"
-
-          if [[ "$API_STATUS" == "200" ]] && grep -q '"status"[[:space:]]*:[[:space:]]*"ok"' /tmp/api-health.out; then
-            echo "PASS: backend API health endpoint is live."
-          else
-            echo "::warning::Backend API is not live on Firebase Hosting. BioBot, AI analogies, and AI-generated quizzes will not work until the Express API is deployed and /api/* is routed to it."
-          fi
 
       - name: Browser smoke test live app
         shell: bash
@@ -120,29 +107,37 @@ jobs:
             });
 
             await page.goto(base, { waitUntil: 'networkidle' });
-            try {
-              await page.locator('header h1').filter({ hasText: 'BodyPractice' }).waitFor({ timeout: 15000 });
-            } catch (err) {
-              console.error('Page errors:', pageErrors);
-              console.error('Console errors:', consoleErrors);
-              console.error('Body text:', (await page.locator('body').innerText()).slice(0, 2000));
-              throw err;
-            }
-
+            await page.locator('header h1').filter({ hasText: 'BodyPractice' }).waitFor({ timeout: 15000 });
             if ((await page.title()) !== 'BodyPractice.io') throw new Error(`Unexpected page title: ${await page.title()}`);
             await page.locator('img[alt="BodyPractice.io human body logo"]').waitFor();
-            console.log('PASS: BodyPractice.io title and human-body logo rendered.');
+
+            const homeText = await page.locator('body').innerText();
+            for (const forbidden of ['BioBot', 'AI Analogy Generator', 'More AI Analogies', 'AI Quiz']) {
+              if (homeText.includes(forbidden)) throw new Error(`Removed AI feature still visible: ${forbidden}`);
+            }
+            console.log('PASS: BioBot and AI analogy/quiz controls are absent.');
 
             await page.getByRole('button', { name: /Lab Simulations/i }).click();
             await page.getByText('Interactive Simulation Lab').waitFor();
             console.log('PASS: Lab Simulations opens.');
 
             await page.getByRole('button', { name: /Quiz Master/i }).click();
-            await page.getByText('Anatomy Mastery Quiz').waitFor();
-            await page.getByText('A', { exact: true }).click();
+            await page.getByText('100-Question Anatomy Mastery Bank').waitFor();
+            await page.getByText('Question 1 of 100', { exact: true }).waitFor();
+            await page.getByText('A', { exact: true }).first().click();
             await page.getByRole('button', { name: 'Submit Answer' }).click();
             await page.getByText('Explanation:').waitFor();
-            console.log('PASS: Built-in quiz accepts and scores an answer.');
+            console.log('PASS: 100-question quiz accepts and scores an answer.');
+
+            const systemsRow = page.getByText('Body Systems:', { exact: true }).locator('..');
+            const systemButtons = systemsRow.locator('button');
+            const systemCount = await systemButtons.count();
+            if (systemCount !== 7) throw new Error(`Expected 7 body-system buttons; found ${systemCount}.`);
+            for (let i = 0; i < systemCount; i += 1) {
+              await systemButtons.nth(i).click();
+              await page.getByText('Question 1 of 100', { exact: true }).waitFor();
+            }
+            console.log('PASS: all 7 body systems load a 100-question bank.');
 
             await page.getByRole('button', { name: /Explorer/i }).click();
             const search = page.getByPlaceholder(/Search part/i);
@@ -151,18 +146,8 @@ jobs:
             await page.getByRole('heading', { name: 'Retina' }).waitFor();
             console.log('PASS: Anatomy search returns a selectable structure.');
 
-            const systemsRow = page.getByText('Body Systems:', { exact: true }).locator('..');
-            const systemButtons = systemsRow.locator('button');
-            const systemCount = await systemButtons.count();
-            if (systemCount < 7) throw new Error(`Expected at least 7 body-system buttons; found ${systemCount}.`);
-            for (let i = 0; i < systemCount; i++) {
-              await systemButtons.nth(i).click();
-            }
-            console.log(`PASS: ${systemCount} body-system navigation buttons are interactive.`);
-
-            if (pageErrors.length) {
-              throw new Error(`Browser page errors: ${pageErrors.join(' | ')}`);
-            }
+            if (pageErrors.length) throw new Error(`Browser page errors: ${pageErrors.join(' | ')}`);
+            if (consoleErrors.length) throw new Error(`Browser console errors: ${consoleErrors.join(' | ')}`);
 
             await browser.close();
           })().catch(err => {
