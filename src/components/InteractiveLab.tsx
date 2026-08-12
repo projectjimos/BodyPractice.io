@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Sun, Eye, Activity, Heart, Wind, Dumbbell, Utensils, Play, Pause, RotateCcw, Volume2, Sparkles, Compass, Radio } from 'lucide-react';
-import { OrganId, OrganSystem, AnatomicalPart } from '../types';
+import { Sun, Eye, Activity, Heart, Wind, Dumbbell, Utensils, Sparkles, Compass, Radio } from 'lucide-react';
+import { OrganSystem } from '../types';
 import { EyeDiagram } from './Diagrams/EyeDiagram';
 import { BrainDiagram } from './Diagrams/BrainDiagram';
 import { HeartDiagram } from './Diagrams/HeartDiagram';
@@ -20,33 +20,19 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
   onSelectPart,
   selectedPartId
 }) => {
-  // Eye Lab States
   const [brightness, setBrightness] = useState(50);
   const [focusDistance, setFocusDistance] = useState(50);
-
-  // Brain Lab States
   const [activeActivity, setActiveActivity] = useState<string | null>('vision');
-
-  // Heart Lab States
   const [bpm, setBpm] = useState(72);
-
-  // Lungs Lab States
   const [isInhaling, setIsInhaling] = useState(true);
-
-  // Skeleton Lab States
   const [isFlexed, setIsFlexed] = useState(false);
-
-  // Digestive Lab States
   const [digestionStage, setDigestionStage] = useState(0);
-
-  // Ear Lab States
-  const [soundFrequency, setSoundFrequency] = useState(1000); // 20 - 20000 Hz
-  const [soundDb, setSoundDb] = useState(60); // 0 - 120 dB
+  const [soundFrequency, setSoundFrequency] = useState(1000);
+  const [soundDb, setSoundDb] = useState(60);
   const [isHeadRotating, setIsHeadRotating] = useState(false);
 
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      {/* Left Column: Interactive Diagram Canvas */}
       <div className="lg:col-span-7 flex flex-col gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div className="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2.5">
@@ -59,11 +45,10 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
               </h3>
             </div>
             <div className="text-xs bg-slate-800 px-2.5 py-1 rounded-full text-slate-300 font-mono">
-              Live Physics Engine
+              Illustrative Teaching Model
             </div>
           </div>
 
-          {/* Render Active Organ Diagram with Lab Props */}
           {organSystem.id === 'eye' && (
             <EyeDiagram
               parts={organSystem.parts}
@@ -133,26 +118,23 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
         </div>
       </div>
 
-      {/* Right Column: Dynamic Parameter Control Console */}
       <div className="lg:col-span-5 flex flex-col gap-5">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 text-slate-200">
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">
-              Physiological Variable Controls
+              Teaching Model Controls
             </h4>
             <p className="text-xs text-slate-400">
               {organSystem.labControls.description}
             </p>
           </div>
 
-          {/* EYE CONTROLS */}
           {organSystem.id === 'eye' && (
             <div className="flex flex-col gap-4 border-t border-slate-800 pt-3">
-              {/* Brightness Slider */}
               <div>
                 <div className="flex justify-between text-xs mb-1.5">
                   <span className="font-semibold text-amber-300 flex items-center gap-1">
-                    <Sun className="w-3.5 h-3.5" /> Light Brightness (Lux)
+                    <Sun className="w-3.5 h-3.5" /> Ambient Light Level
                   </span>
                   <span className="font-mono font-bold text-white">{brightness}%</span>
                 </div>
@@ -165,18 +147,17 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                   className="w-full accent-emerald-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
                 />
                 <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                  <span>Dim Room (Pupil Dilates)</span>
-                  <span>Direct Sunlight (Pupil Constricts)</span>
+                  <span>Dimmer (Pupil Dilates)</span>
+                  <span>Brighter (Pupil Constricts)</span>
                 </div>
               </div>
 
-              {/* Focal Distance Slider */}
               <div>
                 <div className="flex justify-between text-xs mb-1.5">
                   <span className="font-semibold text-cyan-300 flex items-center gap-1">
                     <Eye className="w-3.5 h-3.5" /> Target Distance
                   </span>
-                  <span className="font-mono font-bold text-white">{focusDistance < 30 ? 'Near Object' : focusDistance > 70 ? 'Far Landscape' : 'Mid Distance'}</span>
+                  <span className="font-mono font-bold text-white">{focusDistance < 30 ? 'Near Object' : focusDistance > 70 ? 'Far Object' : 'Mid Distance'}</span>
                 </div>
                 <input
                   type="range"
@@ -187,27 +168,26 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                   className="w-full accent-cyan-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
                 />
                 <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                  <span>Reading Book (Lens Thickens)</span>
-                  <span>Looking at Horizon (Lens Flattens)</span>
+                  <span>Near Focus (Lens Rounds)</span>
+                  <span>Distance Focus (Lens Flattens)</span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* BRAIN CONTROLS */}
           {organSystem.id === 'brain' && (
             <div className="flex flex-col gap-3 border-t border-slate-800 pt-3">
               <span className="text-xs font-semibold text-purple-300 flex items-center gap-1">
-                <Activity className="w-3.5 h-3.5" /> Trigger Cognitive/Sensory Activity
+                <Activity className="w-3.5 h-3.5" /> Illustrative Regional Emphasis
               </span>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { id: 'decision', label: 'Make Decision', icon: '🧠', lobe: 'Frontal Lobe' },
-                  { id: 'touch', label: 'Feel Texture', icon: '🖐️', lobe: 'Parietal Lobe' },
-                  { id: 'vision', label: 'Watch Movie', icon: '👁️', lobe: 'Occipital Lobe' },
-                  { id: 'music', label: 'Listen to Song', icon: '🎵', lobe: 'Temporal Lobe' },
-                  { id: 'balance', label: 'Ride Bicycle', icon: '🚲', lobe: 'Cerebellum' },
-                  { id: 'memory', label: 'Recall Fact', icon: '💡', lobe: 'Hippocampus' },
+                  { id: 'decision', label: 'Make Decision', icon: '🧠', lobe: 'Frontal networks' },
+                  { id: 'touch', label: 'Feel Texture', icon: '🖐️', lobe: 'Parietal networks' },
+                  { id: 'vision', label: 'Watch Movie', icon: '👁️', lobe: 'Visual networks' },
+                  { id: 'music', label: 'Listen to Song', icon: '🎵', lobe: 'Auditory networks' },
+                  { id: 'balance', label: 'Ride Bicycle', icon: '🚲', lobe: 'Cerebellar emphasis' },
+                  { id: 'memory', label: 'Recall Fact', icon: '💡', lobe: 'Memory networks' },
                 ].map((act) => (
                   <button
                     key={act.id}
@@ -223,10 +203,12 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                   </button>
                 ))}
               </div>
+              <p className="text-[10px] text-slate-500">
+                Real activities recruit distributed, overlapping brain networks; highlights are simplified for learning.
+              </p>
             </div>
           )}
 
-          {/* HEART CONTROLS */}
           {organSystem.id === 'heart' && (
             <div className="flex flex-col gap-4 border-t border-slate-800 pt-3">
               <div>
@@ -245,15 +227,17 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                   className="w-full accent-rose-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
                 />
                 <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                  <span>Deep Sleep (40 BPM)</span>
-                  <span>Resting (72 BPM)</span>
-                  <span>Sprinting (180 BPM)</span>
+                  <span>Lower Rate</span>
+                  <span>72 BPM Example</span>
+                  <span>High Exercise Rate</span>
                 </div>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Normal heart rate varies with age, fitness, activity, medications, and health status.
+                </p>
               </div>
             </div>
           )}
 
-          {/* LUNGS CONTROLS */}
           {organSystem.id === 'lungs' && (
             <div className="flex flex-col gap-3 border-t border-slate-800 pt-3">
               <span className="text-xs font-semibold text-cyan-300 flex items-center gap-1">
@@ -278,13 +262,12 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                       : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
                   }`}
                 >
-                  🌬️ Exhalation (Diaphragm Relaxes Up)
+                  🌬️ Quiet Exhalation (Diaphragm Relaxes)
                 </button>
               </div>
             </div>
           )}
 
-          {/* SKELETON CONTROLS */}
           {organSystem.id === 'skeleton' && (
             <div className="flex flex-col gap-3 border-t border-slate-800 pt-3">
               <span className="text-xs font-semibold text-amber-300 flex items-center gap-1">
@@ -298,12 +281,11 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                     : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white'
                 }`}
               >
-                {isFlexed ? '💪 Flexed (Biceps Contracted, Triceps Stretched)' : '🖐️ Relaxed Extended Arm'}
+                {isFlexed ? '💪 Elbow Flexion (Biceps Active, Triceps Lengthening)' : '🖐️ Extended Elbow'}
               </button>
             </div>
           )}
 
-          {/* DIGESTIVE CONTROLS */}
           {organSystem.id === 'digestive' && (
             <div className="flex flex-col gap-3 border-t border-slate-800 pt-3">
               <span className="text-xs font-semibold text-emerald-300 flex items-center gap-1">
@@ -311,9 +293,9 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
               </span>
               <div className="flex flex-col gap-2">
                 {[
-                  { stage: 0, label: '1. Esophagus (Peristalsis)', desc: 'Muscular waves push food bolus downward' },
-                  { stage: 1, label: '2. Stomach Acid (pH 1.5)', desc: 'Hydrochloric acid and enzymes churn food into chyme' },
-                  { stage: 2, label: '3. Small Intestine (Villi)', desc: 'Nutrients absorbed across microscopic villi into blood' },
+                  { stage: 0, label: '1. Esophagus (Peristalsis)', desc: 'Muscular waves move the swallowed bolus toward the stomach' },
+                  { stage: 1, label: '2. Stomach', desc: 'Acid, enzymes, and muscular mixing help form chyme' },
+                  { stage: 2, label: '3. Small Intestine (Villi)', desc: 'Digestion continues; nutrients are absorbed into blood and lymph' },
                 ].map((stg) => (
                   <button
                     key={stg.stage}
@@ -332,14 +314,12 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
             </div>
           )}
 
-          {/* EAR CONTROLS */}
           {organSystem.id === 'ear' && (
             <div className="flex flex-col gap-4 border-t border-slate-800 pt-3">
               <span className="text-xs font-semibold text-rose-400 flex items-center gap-1.5">
                 <Radio className="w-3.5 h-3.5" /> Acoustic & Vestibular Controls
               </span>
 
-              {/* Sound Wave Frequency Slider */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between text-xs text-slate-300">
                   <span>Sound Frequency (Pitch)</span>
@@ -356,9 +336,9 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                 />
                 <div className="grid grid-cols-3 gap-1.5 mt-1">
                   {[
-                    { label: 'Deep Bass (100 Hz)', freq: 100 },
-                    { label: 'Human Speech (1 kHz)', freq: 1000 },
-                    { label: 'High Treble (6 kHz)', freq: 6000 }
+                    { label: 'Bass (100 Hz)', freq: 100 },
+                    { label: '1 kHz Tone', freq: 1000 },
+                    { label: 'Treble (6 kHz)', freq: 6000 }
                   ].map((preset) => (
                     <button
                       key={preset.freq}
@@ -375,10 +355,9 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                 </div>
               </div>
 
-              {/* Volume / Decibels Slider */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between text-xs text-slate-300">
-                  <span>Acoustic Volume (Amplitude)</span>
+                  <span>Illustrative Sound Level</span>
                   <span className="font-mono text-rose-400 font-bold">{soundDb} dB</span>
                 </div>
                 <input
@@ -390,9 +369,11 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                   onChange={(e) => setSoundDb(Number(e.target.value))}
                   className="w-full accent-rose-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
                 />
+                <p className="text-[10px] text-slate-500">
+                  This animation is not a calibrated sound-level meter or hearing-safety calculator.
+                </p>
               </div>
 
-              {/* Head Rotation Equilibrium Toggle */}
               <button
                 onClick={() => setIsHeadRotating(!isHeadRotating)}
                 className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
@@ -402,8 +383,11 @@ export const InteractiveLab: React.FC<InteractiveLabProps> = ({
                 }`}
               >
                 <Compass className={`w-4 h-4 ${isHeadRotating ? 'animate-spin' : ''}`} />
-                {isHeadRotating ? '🔄 Head Rotating (Fluid Moving in Semicircular Canals)' : '🧭 Simulate Head Tilt & Rotation'}
+                {isHeadRotating ? '🔄 Head Rotating (Semicircular Canals Respond)' : '🧭 Simulate Head Rotation'}
               </button>
+              <p className="text-[10px] text-slate-500">
+                Semicircular canals primarily sense angular rotation; the utricle and saccule sense gravity, head tilt, and linear acceleration.
+              </p>
             </div>
           )}
         </div>
