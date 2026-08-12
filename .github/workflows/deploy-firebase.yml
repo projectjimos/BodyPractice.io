@@ -121,7 +121,7 @@ jobs:
 
             await page.goto(base, { waitUntil: 'networkidle' });
             try {
-              await page.getByRole('heading', { name: 'BodyPractice.io' }).waitFor({ timeout: 15000 });
+              await page.locator('header h1').filter({ hasText: 'BodyPractice' }).waitFor({ timeout: 15000 });
             } catch (err) {
               console.error('Page errors:', pageErrors);
               console.error('Console errors:', consoleErrors);
