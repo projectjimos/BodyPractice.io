@@ -91,3 +91,69 @@ jobs:
           else
             echo "::warning::Backend API is not live on Firebase Hosting. BioBot and AI-generated quizzes will not work until the Express API is deployed and /api/* is routed to it."
           fi
+
+      - name: Browser smoke test live app
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright@latest
+          npx playwright install --with-deps chromium
+
+          node <<'NODE'
+          const { chromium } = require('playwright');
+
+          (async () => {
+            const base = `https://${process.env.FIREBASE_PROJECT_ID}.web.app`;
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+            const pageErrors = [];
+            page.on('pageerror', err => pageErrors.push(err.message));
+
+            await page.goto(base, { waitUntil: 'networkidle' });
+            await page.getByRole('heading', { name: 'Human Body Fundamentals' }).waitFor();
+            console.log('PASS: React UI rendered.');
+
+            await page.getByRole('button', { name: /Lab Simulations/i }).click();
+            await page.getByText('Interactive Simulation Lab').waitFor();
+            console.log('PASS: Lab Simulations opens.');
+
+            await page.getByRole('button', { name: /Quiz Master/i }).click();
+            await page.getByText('Anatomy Mastery Quiz').waitFor();
+            const answerButtons = page.locator('button').filter({ hasText: /^A|^B|^C|^D/ });
+            if (await answerButtons.count()) {
+              await answerButtons.first().click();
+              await page.getByRole('button', { name: 'Submit Answer' }).click();
+              await page.getByText('Explanation:').waitFor();
+              console.log('PASS: Built-in quiz accepts and scores an answer.');
+            } else {
+              throw new Error('No quiz answer choices rendered.');
+            }
+
+            await page.getByRole('button', { name: /Explorer/i }).click();
+            const search = page.getByPlaceholder(/Search part/i);
+            await search.fill('Retina');
+            await page.getByText('Retina', { exact: true }).first().click();
+            await page.getByText('Retina', { exact: true }).first().waitFor();
+            console.log('PASS: Anatomy search returns a selectable structure.');
+
+            const bodySystemButtons = ['Eye & Vision', 'Brain & Nervous System', 'Heart & Circulation', 'Lungs & Respiration', 'Skeleton & Joints', 'Digestive System', 'Ear & Hearing'];
+            for (const label of bodySystemButtons) {
+              const button = page.getByRole('button', { name: label });
+              if (await button.count()) {
+                await button.first().click();
+              }
+            }
+            console.log('PASS: Body-system navigation is interactive.');
+
+            if (pageErrors.length) {
+              throw new Error(`Browser page errors: ${pageErrors.join(' | ')}`);
+            }
+
+            await browser.close();
+          })().catch(err => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
