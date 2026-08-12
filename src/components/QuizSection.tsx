@@ -1,23 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, HelpCircle, RefreshCw, ArrowRight, Trophy } from 'lucide-react';
+import { CheckCircle2, XCircle, HelpCircle, RefreshCw, ArrowRight, Trophy, ListChecks } from 'lucide-react';
 import { OrganSystem } from '../types';
-import { QUIZ_BANKS } from '../data/quizBanks';
+import { PRACTICE_TESTS } from '../data/quizBanks';
 
 interface QuizSectionProps {
   organSystem: OrganSystem;
 }
 
 export const QuizSection: React.FC<QuizSectionProps> = ({ organSystem }) => {
-  const activeQuiz = QUIZ_BANKS[organSystem.id];
+  const tests = PRACTICE_TESTS[organSystem.id];
+  const [selectedTestIndex, setSelectedTestIndex] = useState<number | null>(null);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
 
+  const activeTest = selectedTestIndex === null ? null : tests[selectedTestIndex];
+  const activeQuiz = activeTest?.questions ?? [];
   const currentQuestion = activeQuiz[currentQuestionIdx];
 
-  const resetQuiz = () => {
+  const resetCurrentTest = () => {
     setCurrentQuestionIdx(0);
     setSelectedOption(null);
     setIsAnswerSubmitted(false);
@@ -25,8 +28,19 @@ export const QuizSection: React.FC<QuizSectionProps> = ({ organSystem }) => {
     setQuizCompleted(false);
   };
 
+  const chooseTest = (index: number) => {
+    setSelectedTestIndex(index);
+    resetCurrentTest();
+  };
+
+  const returnToTestList = () => {
+    setSelectedTestIndex(null);
+    resetCurrentTest();
+  };
+
   useEffect(() => {
-    resetQuiz();
+    setSelectedTestIndex(null);
+    resetCurrentTest();
   }, [organSystem.id]);
 
   const handleOptionSelect = (index: number) => {
@@ -35,7 +49,7 @@ export const QuizSection: React.FC<QuizSectionProps> = ({ organSystem }) => {
   };
 
   const handleSubmitAnswer = () => {
-    if (selectedOption === null || isAnswerSubmitted) return;
+    if (!currentQuestion || selectedOption === null || isAnswerSubmitted) return;
     setIsAnswerSubmitted(true);
     if (selectedOption === currentQuestion.correctAnswerIndex) {
       setScore((prev) => prev + 1);
@@ -53,32 +67,59 @@ export const QuizSection: React.FC<QuizSectionProps> = ({ organSystem }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
           <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Trophy className="w-4 h-4 text-amber-400" /> 100-Question Anatomy Mastery Bank
+            <Trophy className="w-4 h-4 text-amber-400" /> 100 Practice Tests
           </span>
           <h2 className="text-2xl font-bold text-white mt-0.5">Test Your Knowledge: {organSystem.title}</h2>
           <p className="text-xs text-slate-400 mt-1">
-            100 fixed questions built from the site's medically audited learning content. No AI generation.
+            Choose from 100 separate tests. Each test contains 10 medically audited questions.
           </p>
         </div>
 
-        <button
-          onClick={resetQuiz}
-          className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs py-2 px-3.5 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition-all"
-        >
-          <RefreshCw className="w-3.5 h-3.5" /> Restart 100 Questions
-        </button>
+        {activeTest && (
+          <button
+            onClick={returnToTestList}
+            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs py-2 px-3.5 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition-all"
+          >
+            <ListChecks className="w-3.5 h-3.5" /> Choose Another Test
+          </button>
+        )}
       </div>
 
-      {quizCompleted ? (
+      {!activeTest ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-white">Select a Test</h3>
+              <p className="text-xs text-slate-400">100 tests available for {organSystem.title}</p>
+            </div>
+            <span className="text-xs font-bold text-purple-300 bg-purple-950/50 border border-purple-500/20 px-3 py-1.5 rounded-full">
+              100 Tests
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-2">
+            {tests.map((test, index) => (
+              <button
+                key={test.id}
+                data-testid="practice-test-button"
+                onClick={() => chooseTest(index)}
+                className="bg-slate-950/80 hover:bg-purple-950/60 border border-slate-800 hover:border-purple-500/50 text-slate-200 hover:text-white rounded-xl px-2 py-3 text-xs font-semibold transition-all"
+              >
+                Test {test.number}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : quizCompleted ? (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center shadow-2xl flex flex-col items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-purple-900/50 border border-purple-500/40 flex items-center justify-center text-amber-400 shadow-xl">
             <Trophy className="w-8 h-8 animate-bounce" />
           </div>
-          <h3 className="text-3xl font-extrabold text-white">Quiz Completed!</h3>
+          <h3 className="text-3xl font-extrabold text-white">{activeTest.title} Completed!</h3>
           <p className="text-sm text-slate-300">
             You scored <strong className="text-purple-400 text-lg">{score}</strong> out of <strong className="text-white text-lg">{activeQuiz.length}</strong> questions correct.
           </p>
@@ -90,16 +131,25 @@ export const QuizSection: React.FC<QuizSectionProps> = ({ organSystem }) => {
             />
           </div>
 
-          <button
-            onClick={resetQuiz}
-            className="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 px-6 rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all"
-          >
-            <RefreshCw className="w-4 h-4" /> Retake 100 Questions
-          </button>
+          <div className="flex flex-wrap justify-center gap-2 mt-3">
+            <button
+              onClick={resetCurrentTest}
+              className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 px-5 rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all"
+            >
+              <RefreshCw className="w-4 h-4" /> Retake {activeTest.title}
+            </button>
+            <button
+              onClick={returnToTestList}
+              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold py-2.5 px-5 rounded-xl text-xs flex items-center gap-2 transition-all"
+            >
+              <ListChecks className="w-4 h-4" /> Pick Another Test
+            </button>
+          </div>
         </div>
       ) : (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col gap-5">
-          <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+            <span className="font-bold text-purple-300">{activeTest.title}</span>
             <span>Question {currentQuestionIdx + 1} of {activeQuiz.length}</span>
             <span>Score: <strong className="text-purple-400">{score}</strong></span>
           </div>
@@ -173,7 +223,7 @@ export const QuizSection: React.FC<QuizSectionProps> = ({ organSystem }) => {
                 onClick={handleNextQuestion}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-xs shadow-lg flex items-center gap-2 transition-all"
               >
-                {currentQuestionIdx + 1 === activeQuiz.length ? 'Finish Quiz' : 'Next Question'} <ArrowRight className="w-4 h-4" />
+                {currentQuestionIdx + 1 === activeQuiz.length ? 'Finish Test' : 'Next Question'} <ArrowRight className="w-4 h-4" />
               </button>
             )}
           </div>
