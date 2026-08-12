@@ -6,6 +6,13 @@ type FieldConfig = {
   getValue: (part: AnatomicalPart) => string | undefined;
 };
 
+export type PracticeTest = {
+  id: string;
+  number: number;
+  title: string;
+  questions: QuizQuestion[];
+};
+
 const FIELD_CONFIGS: FieldConfig[] = [
   { label: 'primary function', getValue: (part) => part.functionSummary },
   { label: 'anatomical description', getValue: (part) => part.description },
@@ -153,8 +160,6 @@ function buildQuestionBank(system: OrganSystem, allSystems: OrganSystem[]): Quiz
     }
   }
 
-  // System-level fallback questions ensure every bank reaches 100 even if a future
-  // system contains very few structures or sparse reference fields.
   const otherSystems = allSystems.filter((other) => other.id !== system.id);
   for (let round = 0; candidates.length < 100 && round < 8; round += 1) {
     system.keyFunctions.forEach((keyFunction, index) => {
@@ -183,7 +188,7 @@ function buildQuestionBank(system: OrganSystem, allSystems: OrganSystem[]): Quiz
 
   if (candidates.length < 100) {
     throw new Error(
-      `Unable to build 100 quiz questions for ${system.id}; generated ${candidates.length}.`,
+      `Unable to build 100 source questions for ${system.id}; generated ${candidates.length}.`,
     );
   }
 
@@ -193,8 +198,35 @@ function buildQuestionBank(system: OrganSystem, allSystems: OrganSystem[]): Quiz
   }));
 }
 
+function buildPracticeTests(systemId: OrganId, questionBank: QuizQuestion[]): PracticeTest[] {
+  if (questionBank.length !== 100) {
+    throw new Error(`${systemId} must have exactly 100 source questions before tests are built.`);
+  }
+
+  return Array.from({ length: 100 }, (_, testIndex) => {
+    // Multipliers 7 and 9 are coprime with 100, producing 100 deterministic
+    // starting positions and 10 distinct questions inside each test.
+    const start = (testIndex * 7) % questionBank.length;
+    const questions = Array.from({ length: 10 }, (_, questionIndex) => {
+      const sourceIndex = (start + questionIndex * 9) % questionBank.length;
+      return questionBank[sourceIndex];
+    });
+
+    return {
+      id: `test-${systemId}-${String(testIndex + 1).padStart(3, '0')}`,
+      number: testIndex + 1,
+      title: `Test ${testIndex + 1}`,
+      questions,
+    };
+  });
+}
+
 const systems = Object.values(ORGAN_SYSTEMS) as OrganSystem[];
 
 export const QUIZ_BANKS = Object.fromEntries(
   systems.map((system) => [system.id, buildQuestionBank(system, systems)]),
 ) as Record<OrganId, QuizQuestion[]>;
+
+export const PRACTICE_TESTS = Object.fromEntries(
+  systems.map((system) => [system.id, buildPracticeTests(system.id, QUIZ_BANKS[system.id])]),
+) as Record<OrganId, PracticeTest[]>;
