@@ -66,6 +66,18 @@ jobs:
         with:
           project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
 
+      - name: Enable required Google Cloud APIs
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          gcloud services enable \
+            run.googleapis.com \
+            cloudbuild.googleapis.com \
+            artifactregistry.googleapis.com \
+            --project "$FIREBASE_PROJECT_ID" \
+            --quiet
+
       - name: Deploy application server to Cloud Run
         shell: bash
         env:
