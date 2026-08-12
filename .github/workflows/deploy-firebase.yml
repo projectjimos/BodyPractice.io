@@ -62,3 +62,32 @@ jobs:
             --only hosting \
             --project "$FIREBASE_PROJECT_ID" \
             --non-interactive
+
+      - name: Smoke test live Firebase app
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          BASE_URL="https://${FIREBASE_PROJECT_ID}.web.app"
+
+          echo "Testing deployed homepage..."
+          curl --fail --silent --show-error --location --retry 4 --retry-delay 2 \
+            "$BASE_URL/" -o /tmp/home.html
+          grep -q '<div id="root"></div>' /tmp/home.html
+          echo "PASS: Firebase homepage is reachable and contains the React mount point."
+
+          echo "Testing production API health route..."
+          API_STATUS=$(curl --silent --show-error --location \
+            -o /tmp/api-health.out -w '%{http_code}' "$BASE_URL/api/health" || true)
+          API_TYPE=$(curl --silent --show-error --head --location \
+            "$BASE_URL/api/health" | tr -d '\r' | awk 'BEGIN{IGNORECASE=1} /^content-type:/{print $2; exit}')
+
+          echo "API /api/health status: $API_STATUS"
+          echo "API /api/health content-type: ${API_TYPE:-unknown}"
+
+          if [[ "$API_STATUS" == "200" ]] && grep -q '"status"[[:space:]]*:[[:space:]]*"ok"' /tmp/api-health.out; then
+            echo "PASS: backend API health endpoint is live."
+          else
+            echo "::warning::Backend API is not live on Firebase Hosting. BioBot and AI-generated quizzes will not work until the Express API is deployed and /api/* is routed to it."
+          fi
