@@ -24,7 +24,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Search filter across all organ parts
   const searchResults = searchQuery.trim()
     ? (Object.values(organSystems) as OrganSystem[]).flatMap((system: OrganSystem) =>
         system.parts
@@ -51,15 +50,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Brand & Main Title */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-emerald-500/20">
-              🧬
-            </div>
+            <img
+              src="/bodypractice-logo.svg"
+              alt="BodyPractice.io human body logo"
+              className="w-10 h-10 rounded-xl shadow-lg shadow-cyan-500/10"
+            />
             <div>
               <h1 className="text-base font-extrabold text-white tracking-tight flex items-center gap-1.5">
-                Human Body Fundamentals
+                BodyPractice<span className="text-cyan-400">.io</span>
               </h1>
               <span className="text-[10px] text-emerald-400 font-semibold tracking-wider uppercase block -mt-0.5">
                 Interactive Anatomy Explorer
@@ -67,7 +67,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* BioBot Mobile Quick Launcher Button */}
           <button
             onClick={onOpenAiTutor}
             className="md:hidden p-2 rounded-xl bg-purple-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-900/40"
@@ -76,7 +75,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
 
-        {/* View Mode Tabs (Explorer, Interactive Lab, Quiz Master) */}
         <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1 text-xs">
           <button
             onClick={() => onSelectTab('explorer')}
@@ -112,9 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
 
-        {/* Search Bar & BioBot Launcher */}
         <div className="flex items-center gap-3 w-full md:w-auto">
-          {/* Search Input */}
           <div className="relative flex-1 md:w-60">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
@@ -131,7 +127,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             </div>
 
-            {/* Search Dropdown Results */}
             {isSearchOpen && searchResults.length > 0 && (
               <div className="absolute left-0 right-0 top-10 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-2 z-50 max-h-60 overflow-y-auto space-y-1">
                 {searchResults.map(({ systemId, part }) => (
@@ -155,7 +150,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Desktop AI BioBot Launcher Button */}
           <button
             onClick={onOpenAiTutor}
             className="hidden md:flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-1.5 px-3.5 rounded-xl text-xs shadow-lg shadow-purple-900/30 transition-all hover:scale-[1.02]"
@@ -165,7 +159,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Sub-Bar: Organ System Selector Pills */}
       <div className="bg-slate-950/80 border-t border-slate-800/80 px-4 py-2 overflow-x-auto no-scrollbar">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-2 whitespace-nowrap">
