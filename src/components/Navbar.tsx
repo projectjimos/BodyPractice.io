@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Heart, Activity, Wind, Dumbbell, Utensils, Search, Bot, BookOpen, Sparkles, Trophy, Volume2 } from 'lucide-react';
+import { Eye, Heart, Activity, Wind, Dumbbell, Utensils, Search, BookOpen, Sparkles, Trophy, Volume2 } from 'lucide-react';
 import { OrganId, OrganSystem } from '../types';
 
 interface NavbarProps {
@@ -8,7 +8,6 @@ interface NavbarProps {
   onSelectOrgan: (organId: OrganId) => void;
   activeTab: 'explorer' | 'lab' | 'quiz';
   onSelectTab: (tab: 'explorer' | 'lab' | 'quiz') => void;
-  onOpenAiTutor: () => void;
   onSearchSelectPart: (organId: OrganId, partId: string) => void;
 }
 
@@ -18,7 +17,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectOrgan,
   activeTab,
   onSelectTab,
-  onOpenAiTutor,
   onSearchSelectPart
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,22 +64,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
           </div>
-
-          <button
-            onClick={onOpenAiTutor}
-            className="md:hidden p-2 rounded-xl bg-purple-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-900/40"
-          >
-            <Bot className="w-4 h-4" /> AI Tutor
-          </button>
         </div>
 
         <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1 text-xs">
           <button
             onClick={() => onSelectTab('explorer')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-              activeTab === 'explorer'
-                ? 'bg-slate-800 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'explorer' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5 text-cyan-400" /> Explorer
@@ -90,9 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={() => onSelectTab('lab')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-              activeTab === 'lab'
-                ? 'bg-slate-800 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'lab' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Lab Simulations
@@ -101,9 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={() => onSelectTab('quiz')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-              activeTab === 'quiz'
-                ? 'bg-slate-800 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200'
+              activeTab === 'quiz' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Trophy className="w-3.5 h-3.5 text-purple-400" /> Quiz Master
@@ -111,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-60">
+          <div className="relative flex-1 md:w-72">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
               <input
@@ -131,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="absolute left-0 right-0 top-10 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-2 z-50 max-h-60 overflow-y-auto space-y-1">
                 {searchResults.map(({ systemId, part }) => (
                   <button
-                    key={part.id}
+                    key={`${systemId}-${part.id}`}
                     onClick={() => {
                       onSearchSelectPart(systemId as OrganId, part.id);
                       setIsSearchOpen(false);
@@ -149,21 +134,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
           </div>
-
-          <button
-            onClick={onOpenAiTutor}
-            className="hidden md:flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-1.5 px-3.5 rounded-xl text-xs shadow-lg shadow-purple-900/30 transition-all hover:scale-[1.02]"
-          >
-            <Bot className="w-4 h-4" /> Ask BioBot
-          </button>
         </div>
       </div>
 
       <div className="bg-slate-950/80 border-t border-slate-800/80 px-4 py-2 overflow-x-auto no-scrollbar">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-2 whitespace-nowrap">
-            Body Systems:
-          </span>
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-2 whitespace-nowrap">Body Systems:</span>
           {(Object.values(organSystems) as OrganSystem[]).map((sys) => {
             const isActive = activeOrganId === sys.id;
             return (
