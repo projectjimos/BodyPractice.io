@@ -11,11 +11,7 @@
     "rewrites": [
       {
         "source": "**",
-        "run": {
-          "serviceId": "bodypractice",
-          "region": "northamerica-northeast1",
-          "pinTag": true
-        }
+        "destination": "/index.html"
       }
     ]
   }

@@ -13,17 +13,12 @@ concurrency:
   group: bodypractice-production
   cancel-in-progress: true
 
-env:
-  CLOUD_RUN_SERVICE: bodypractice
-  CLOUD_RUN_REGION: northamerica-northeast1
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Check deployment configuration
-        id: config
         shell: bash
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -34,12 +29,9 @@ jobs:
           [[ -z "$FIREBASE_SERVICE_ACCOUNT" ]] && missing+=("FIREBASE_SERVICE_ACCOUNT")
 
           if (( ${#missing[@]} > 0 )); then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::error::Firebase deployment is missing GitHub secrets: ${missing[*]}"
             exit 1
           fi
-
-          echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Validate production build
+      - name: Build web app
         run: npm run build
 
       - name: Authenticate to Google Cloud
@@ -60,47 +52,6 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
-
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v3
-        with:
-          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
-
-      - name: Enable required Google Cloud APIs
-        shell: bash
-        env:
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-        run: |
-          gcloud services enable \
-            run.googleapis.com \
-            cloudbuild.googleapis.com \
-            artifactregistry.googleapis.com \
-            --project "$FIREBASE_PROJECT_ID" \
-            --quiet
-
-      - name: Deploy application server to Cloud Run
-        shell: bash
-        env:
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          args=(
-            run deploy "$CLOUD_RUN_SERVICE"
-            --source .
-            --project "$FIREBASE_PROJECT_ID"
-            --region "$CLOUD_RUN_REGION"
-            --port 3000
-            --allow-unauthenticated
-            --quiet
-          )
-
-          if [[ -n "$GEMINI_API_KEY" ]]; then
-            args+=(--set-env-vars "GEMINI_API_KEY=$GEMINI_API_KEY")
-          else
-            echo "::warning::GEMINI_API_KEY is not configured; deploying without updating that runtime variable."
-          fi
-
-          gcloud "${args[@]}"
 
       - name: Deploy Firebase Hosting
         shell: bash
