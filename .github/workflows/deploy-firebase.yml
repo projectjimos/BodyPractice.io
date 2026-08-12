@@ -75,7 +75,8 @@ jobs:
           curl --fail --silent --show-error --location --retry 4 --retry-delay 2 \
             "$BASE_URL/" -o /tmp/home.html
           grep -q '<div id="root"></div>' /tmp/home.html
-          echo "PASS: Firebase homepage is reachable and contains the React mount point."
+          grep -q '<title>BodyPractice.io</title>' /tmp/home.html
+          echo "PASS: Firebase homepage is reachable and branded BodyPractice.io."
 
           echo "Testing production API health route..."
           API_STATUS=$(curl --silent --show-error --location \
@@ -111,8 +112,10 @@ jobs:
             page.on('pageerror', err => pageErrors.push(err.message));
 
             await page.goto(base, { waitUntil: 'networkidle' });
-            await page.getByRole('heading', { name: 'Human Body Fundamentals' }).waitFor();
-            console.log('PASS: React UI rendered.');
+            await page.getByRole('heading', { name: 'BodyPractice.io' }).waitFor();
+            if ((await page.title()) !== 'BodyPractice.io') throw new Error(`Unexpected page title: ${await page.title()}`);
+            await page.locator('img[alt="BodyPractice.io human body logo"]').waitFor();
+            console.log('PASS: BodyPractice.io title and human-body logo rendered.');
 
             await page.getByRole('button', { name: /Lab Simulations/i }).click();
             await page.getByText('Interactive Simulation Lab').waitFor();
