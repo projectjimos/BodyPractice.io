@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ORGAN_SYSTEMS } from './data/verifiedOrganData';
+import { ORGAN_SYSTEMS } from './data/auditedOrganData';
 import { OrganId } from './types';
 import { Navbar } from './components/Navbar';
 import { EyeDiagram } from './components/Diagrams/EyeDiagram';
@@ -20,7 +20,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'explorer' | 'lab' | 'quiz'>('explorer');
   const [selectedPartId, setSelectedPartId] = useState<string | null>('cornea');
 
-  // AI Tutor Modal states
   const [isAiTutorOpen, setIsAiTutorOpen] = useState(false);
   const [tutorInitialPrompt, setTutorInitialPrompt] = useState<string | undefined>(undefined);
 
@@ -46,7 +45,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
-      {/* Navigation Header */}
       <Navbar
         organSystems={ORGAN_SYSTEMS}
         activeOrganId={activeOrganId}
@@ -60,13 +58,11 @@ export default function App() {
         onSearchSelectPart={handleSearchSelectPart}
       />
 
-      {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
-        {/* Organ Hero Overview Banner */}
         <div className={`rounded-2xl p-6 border border-slate-800 bg-gradient-to-r ${activeOrgan.bgGradient} relative overflow-hidden shadow-2xl`}>
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <span 
+              <span
                 className="text-xs font-extrabold tracking-wider uppercase px-3 py-1 rounded-full border mb-2 inline-block"
                 style={{ color: activeOrgan.accentColor, borderColor: `${activeOrgan.accentColor}40`, backgroundColor: `${activeOrgan.accentColor}15` }}
               >
@@ -80,7 +76,6 @@ export default function App() {
               </p>
             </div>
 
-            {/* Quick Action Chips */}
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setActiveTab('lab')}
@@ -98,10 +93,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* VIEW TAB CONTENT SWITCHER */}
         {activeTab === 'explorer' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column: Interactive Diagram Canvas */}
             <div className="lg:col-span-7 flex flex-col gap-4">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col items-center">
                 <div className="w-full flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2">
@@ -113,7 +106,6 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* Render SVG Diagram per Active Organ */}
                 {activeOrganId === 'eye' && (
                   <EyeDiagram
                     parts={activeOrgan.parts}
@@ -171,7 +163,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Organ Parts List Buttons */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
                   Anatomical Structures ({activeOrgan.parts.length}):
@@ -203,7 +194,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right Column: Part Detail Panel Inspector */}
             <div className="lg:col-span-5">
               {selectedPart ? (
                 <PartDetailPanel
@@ -221,7 +211,6 @@ export default function App() {
           </div>
         )}
 
-        {/* LAB SIMULATIONS TAB */}
         {activeTab === 'lab' && (
           <InteractiveLab
             organSystem={activeOrgan}
@@ -230,13 +219,11 @@ export default function App() {
           />
         )}
 
-        {/* QUIZ MASTER TAB */}
         {activeTab === 'quiz' && (
           <QuizSection organSystem={activeOrgan} />
         )}
       </main>
 
-      {/* AI BioBot Tutor Modal */}
       <AiTutorModal
         isOpen={isAiTutorOpen}
         onClose={() => setIsAiTutorOpen(false)}
@@ -244,7 +231,6 @@ export default function App() {
         organContext={activeOrgan.title}
       />
 
-      {/* Footer */}
       <footer className="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>BodyPractice.io — Interactive Anatomy & Biology Explorer for Students</span>
