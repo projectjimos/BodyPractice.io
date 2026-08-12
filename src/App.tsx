@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ORGAN_SYSTEMS } from './data/organData';
+import { ORGAN_SYSTEMS } from './data/verifiedOrganData';
 import { OrganId } from './types';
 import { Navbar } from './components/Navbar';
 import { EyeDiagram } from './components/Diagrams/EyeDiagram';
@@ -247,7 +247,7 @@ export default function App() {
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Human Body Fundamentals — Interactive Anatomy & Biology Explorer for Students</span>
+          <span>BodyPractice.io — Interactive Anatomy & Biology Explorer for Students</span>
           <button
             onClick={() => handleAskBioBot("What is the most complex human organ and why?")}
             className="text-purple-400 hover:underline flex items-center gap-1"
