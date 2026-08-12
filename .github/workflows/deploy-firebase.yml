@@ -48,9 +48,9 @@ jobs:
         run: |
           npx --yes tsx@latest -e "import('./src/data/auditedOrganData.ts').then(() => console.log('PASS: audited anatomy data loads without runtime errors.'))"
 
-      - name: Validate 700-question banks
+      - name: Validate 700 practice tests
         run: |
-          npx --yes tsx@latest -e "import('./src/data/quizBanks.ts').then(({ QUIZ_BANKS }) => { const entries = Object.entries(QUIZ_BANKS); if (entries.length !== 7) throw new Error('Expected 7 body-system quiz banks.'); for (const [system, questions] of entries) { if (questions.length !== 100) throw new Error(system + ' has ' + questions.length + ' questions instead of 100.'); const ids = new Set(questions.map((q) => q.id)); if (ids.size !== 100) throw new Error(system + ' contains duplicate question IDs.'); for (const q of questions) { if (q.options.length !== 4) throw new Error(q.id + ' does not have 4 options.'); if (q.correctAnswerIndex < 0 || q.correctAnswerIndex > 3) throw new Error(q.id + ' has an invalid answer index.'); } console.log('PASS: ' + system + ' has 100 valid questions.'); } console.log('PASS: 700 total questions validated.'); })"
+          npx --yes tsx@latest -e "import('./src/data/quizBanks.ts').then(({ PRACTICE_TESTS }) => { const entries = Object.entries(PRACTICE_TESTS); if (entries.length !== 7) throw new Error('Expected 7 body-system test collections.'); let totalTests = 0; for (const [system, tests] of entries) { if (tests.length !== 100) throw new Error(system + ' has ' + tests.length + ' tests instead of 100.'); const testIds = new Set(tests.map((t) => t.id)); if (testIds.size !== 100) throw new Error(system + ' contains duplicate test IDs.'); for (const test of tests) { if (test.questions.length !== 10) throw new Error(test.id + ' has ' + test.questions.length + ' questions instead of 10.'); const questionIds = new Set(test.questions.map((q) => q.id)); if (questionIds.size !== 10) throw new Error(test.id + ' repeats a question inside the same test.'); for (const q of test.questions) { if (q.options.length !== 4) throw new Error(q.id + ' does not have 4 options.'); if (q.correctAnswerIndex < 0 || q.correctAnswerIndex > 3) throw new Error(q.id + ' has an invalid answer index.'); } } totalTests += tests.length; console.log('PASS: ' + system + ' has 100 valid 10-question tests.'); } if (totalTests !== 700) throw new Error('Expected 700 total tests; found ' + totalTests + '.'); console.log('PASS: 700 total practice tests validated.'); })"
 
       - name: Build web app
         run: npm run build
@@ -115,19 +115,23 @@ jobs:
             for (const forbidden of ['BioBot', 'AI Analogy Generator', 'More AI Analogies', 'AI Quiz']) {
               if (homeText.includes(forbidden)) throw new Error(`Removed AI feature still visible: ${forbidden}`);
             }
-            console.log('PASS: BioBot and AI analogy/quiz controls are absent.');
-
-            await page.getByRole('button', { name: /Lab Simulations/i }).click();
-            await page.getByText('Interactive Simulation Lab').waitFor();
-            console.log('PASS: Lab Simulations opens.');
+            console.log('PASS: removed AI controls remain absent.');
 
             await page.getByRole('button', { name: /Quiz Master/i }).click();
-            await page.getByText('100-Question Anatomy Mastery Bank').waitFor();
-            await page.getByText('Question 1 of 100', { exact: true }).waitFor();
+            await page.getByText('100 Practice Tests', { exact: true }).waitFor();
+            let testButtons = page.locator('[data-testid="practice-test-button"]');
+            if ((await testButtons.count()) !== 100) throw new Error(`Expected 100 test buttons; found ${await testButtons.count()}.`);
+            await testButtons.first().click();
+            await page.getByText('Test 1', { exact: true }).waitFor();
+            await page.getByText('Question 1 of 10', { exact: true }).waitFor();
             await page.getByText('A', { exact: true }).first().click();
             await page.getByRole('button', { name: 'Submit Answer' }).click();
             await page.getByText('Explanation:').waitFor();
-            console.log('PASS: 100-question quiz accepts and scores an answer.');
+            console.log('PASS: a 10-question practice test opens and scores an answer.');
+
+            await page.getByRole('button', { name: /Choose Another Test/i }).click();
+            testButtons = page.locator('[data-testid="practice-test-button"]');
+            if ((await testButtons.count()) !== 100) throw new Error('Test selector did not return 100 tests.');
 
             const systemsRow = page.getByText('Body Systems:', { exact: true }).locator('..');
             const systemButtons = systemsRow.locator('button');
@@ -135,9 +139,11 @@ jobs:
             if (systemCount !== 7) throw new Error(`Expected 7 body-system buttons; found ${systemCount}.`);
             for (let i = 0; i < systemCount; i += 1) {
               await systemButtons.nth(i).click();
-              await page.getByText('Question 1 of 100', { exact: true }).waitFor();
+              await page.getByText('100 Practice Tests', { exact: true }).waitFor();
+              const count = await page.locator('[data-testid="practice-test-button"]').count();
+              if (count !== 100) throw new Error(`Body system ${i + 1} exposes ${count} tests instead of 100.`);
             }
-            console.log('PASS: all 7 body systems load a 100-question bank.');
+            console.log('PASS: all 7 body systems expose 100 selectable tests.');
 
             await page.getByRole('button', { name: /Explorer/i }).click();
             const search = page.getByPlaceholder(/Search part/i);
