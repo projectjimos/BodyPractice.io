@@ -1,0 +1,6 @@
+{
+  "name": "Human Body Fundamentals",
+  "description": "Interactive anatomy explorer for students learning body systems, organ fundamentals, 3D diagrams, quizzes, and AI tutor assistance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
