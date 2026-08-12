@@ -89,7 +89,7 @@ jobs:
           if [[ "$API_STATUS" == "200" ]] && grep -q '"status"[[:space:]]*:[[:space:]]*"ok"' /tmp/api-health.out; then
             echo "PASS: backend API health endpoint is live."
           else
-            echo "::warning::Backend API is not live on Firebase Hosting. BioBot and AI-generated quizzes will not work until the Express API is deployed and /api/* is routed to it."
+            echo "::warning::Backend API is not live on Firebase Hosting. BioBot, AI analogies, and AI-generated quizzes will not work until the Express API is deployed and /api/* is routed to it."
           fi
 
       - name: Browser smoke test live app
@@ -99,14 +99,13 @@ jobs:
         run: |
           set -euo pipefail
           npm install --no-save playwright@latest
-          npx playwright install --with-deps chromium
 
           node <<'NODE'
           const { chromium } = require('playwright');
 
           (async () => {
             const base = `https://${process.env.FIREBASE_PROJECT_ID}.web.app`;
-            const browser = await chromium.launch({ headless: true });
+            const browser = await chromium.launch({ headless: true, channel: 'chrome' });
             const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
             const pageErrors = [];
             page.on('pageerror', err => pageErrors.push(err.message));
@@ -121,31 +120,26 @@ jobs:
 
             await page.getByRole('button', { name: /Quiz Master/i }).click();
             await page.getByText('Anatomy Mastery Quiz').waitFor();
-            const answerButtons = page.locator('button').filter({ hasText: /^A|^B|^C|^D/ });
-            if (await answerButtons.count()) {
-              await answerButtons.first().click();
-              await page.getByRole('button', { name: 'Submit Answer' }).click();
-              await page.getByText('Explanation:').waitFor();
-              console.log('PASS: Built-in quiz accepts and scores an answer.');
-            } else {
-              throw new Error('No quiz answer choices rendered.');
-            }
+            await page.getByText('A', { exact: true }).click();
+            await page.getByRole('button', { name: 'Submit Answer' }).click();
+            await page.getByText('Explanation:').waitFor();
+            console.log('PASS: Built-in quiz accepts and scores an answer.');
 
             await page.getByRole('button', { name: /Explorer/i }).click();
             const search = page.getByPlaceholder(/Search part/i);
             await search.fill('Retina');
-            await page.getByText('Retina', { exact: true }).first().click();
-            await page.getByText('Retina', { exact: true }).first().waitFor();
+            await page.getByRole('button').filter({ hasText: 'Retina' }).first().click();
+            await page.getByRole('heading', { name: 'Retina' }).waitFor();
             console.log('PASS: Anatomy search returns a selectable structure.');
 
-            const bodySystemButtons = ['Eye & Vision', 'Brain & Nervous System', 'Heart & Circulation', 'Lungs & Respiration', 'Skeleton & Joints', 'Digestive System', 'Ear & Hearing'];
-            for (const label of bodySystemButtons) {
-              const button = page.getByRole('button', { name: label });
-              if (await button.count()) {
-                await button.first().click();
-              }
+            const systemsRow = page.getByText('Body Systems:', { exact: true }).locator('..');
+            const systemButtons = systemsRow.locator('button');
+            const systemCount = await systemButtons.count();
+            if (systemCount < 7) throw new Error(`Expected at least 7 body-system buttons; found ${systemCount}.`);
+            for (let i = 0; i < systemCount; i++) {
+              await systemButtons.nth(i).click();
             }
-            console.log('PASS: Body-system navigation is interactive.');
+            console.log(`PASS: ${systemCount} body-system navigation buttons are interactive.`);
 
             if (pageErrors.length) {
               throw new Error(`Browser page errors: ${pageErrors.join(' | ')}`);
