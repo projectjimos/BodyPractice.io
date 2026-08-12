@@ -44,6 +44,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Validate audited anatomy data
+        run: |
+          npx --yes tsx@latest -e "import('./src/data/auditedOrganData.ts').then(() => console.log('PASS: audited anatomy data loads without runtime errors.'))"
+
       - name: Build web app
         run: npm run build
 
@@ -109,10 +113,22 @@ jobs:
             const browser = await chromium.launch({ headless: true, channel: 'chrome' });
             const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
             const pageErrors = [];
+            const consoleErrors = [];
             page.on('pageerror', err => pageErrors.push(err.message));
+            page.on('console', msg => {
+              if (msg.type() === 'error') consoleErrors.push(msg.text());
+            });
 
             await page.goto(base, { waitUntil: 'networkidle' });
-            await page.getByRole('heading', { name: 'BodyPractice.io' }).waitFor();
+            try {
+              await page.getByRole('heading', { name: 'BodyPractice.io' }).waitFor({ timeout: 15000 });
+            } catch (err) {
+              console.error('Page errors:', pageErrors);
+              console.error('Console errors:', consoleErrors);
+              console.error('Body text:', (await page.locator('body').innerText()).slice(0, 2000));
+              throw err;
+            }
+
             if ((await page.title()) !== 'BodyPractice.io') throw new Error(`Unexpected page title: ${await page.title()}`);
             await page.locator('img[alt="BodyPractice.io human body logo"]').waitFor();
             console.log('PASS: BodyPractice.io title and human-body logo rendered.');
