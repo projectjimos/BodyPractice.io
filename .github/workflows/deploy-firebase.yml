@@ -1,0 +1,102 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bodypractice-production
+  cancel-in-progress: true
+
+env:
+  CLOUD_RUN_SERVICE: bodypractice
+  CLOUD_RUN_REGION: northamerica-northeast1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check deployment configuration
+        id: config
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          missing=()
+          [[ -z "$FIREBASE_PROJECT_ID" ]] && missing+=("FIREBASE_PROJECT_ID")
+          [[ -z "$FIREBASE_SERVICE_ACCOUNT" ]] && missing+=("FIREBASE_SERVICE_ACCOUNT")
+          [[ -z "$GEMINI_API_KEY" ]] && missing+=("GEMINI_API_KEY")
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Firebase auto-deploy is installed but waiting for GitHub secrets: ${missing[*]}"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.config.outputs.ready == 'true'
+        run: npm install
+
+      - name: Validate production build
+        if: steps.config.outputs.ready == 'true'
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        if: steps.config.outputs.ready == 'true'
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      - name: Set up Google Cloud SDK
+        if: steps.config.outputs.ready == 'true'
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      - name: Deploy application server to Cloud Run
+        if: steps.config.outputs.ready == 'true'
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --source . \
+            --project "$FIREBASE_PROJECT_ID" \
+            --region "$CLOUD_RUN_REGION" \
+            --port 3000 \
+            --allow-unauthenticated \
+            --set-env-vars "GEMINI_API_KEY=$GEMINI_API_KEY" \
+            --quiet
+
+      - name: Deploy Firebase Hosting
+        if: steps.config.outputs.ready == 'true'
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          npx --yes firebase-tools@latest deploy \
+            --only hosting \
+            --project "$FIREBASE_PROJECT_ID" \
+            --non-interactive

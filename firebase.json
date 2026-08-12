@@ -1,0 +1,22 @@
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "server.cjs",
+      "server.cjs.map"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "bodypractice",
+          "region": "northamerica-northeast1",
+          "pinTag": true
+        }
+      }
+    ]
+  }
+}
